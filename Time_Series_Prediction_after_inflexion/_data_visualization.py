@@ -75,11 +75,21 @@ def invert_scale(scaler, ori_array ,pred_array):
     pred_array_inverted=inverted[:,-1]
     return pred_array_inverted
 
+def average_list(list_in):
+    num=len(list_in)
+    i=sum(list_in)
+    # for unit in list_in:
+    #     i+=unit
+    average=i/num
+    return average
+
 if __name__ == '__main__':
     # load dataset
     meters_id=1002
-    dirs = './Data/Residential_Load/'+str(meters_id)+'/meters_id_'+str(meters_id)+'.npz'
+    dirs = './Data/Residential_Load/meters_id_'+str(meters_id)+'_hour.npz'
     meters_date, meters_time, load_data = load_data(dirs)
+
+    load_average = average_list(load_data)
 
     ts_values_array=np.array(load_data)
     set_length=len(ts_values_array)
@@ -123,6 +133,7 @@ if __name__ == '__main__':
     ax1=plt.subplot(311)
     # ax1.set_xticks(np.arange(0,set_length,10))
     ax1.plot(train_scope, ts_train,'k',label='ts_train',linewidth = 1.0)
+    ax1.plot(np.arange(set_length),np.ones(set_length)*load_average,'m',label='ts_average',linewidth=1.0)
     ax1.plot(test_scope, ts_target,'r',label='ts_target',linewidth = 1.0)
     # ax1.minorticks_on()
     # ax1.grid(which='both')
@@ -151,6 +162,6 @@ if __name__ == '__main__':
     plt.xlabel('Time Sequence')
     plt.ylabel('Scaled Difference')
 
-    plt.subplots_adjust(hspace=0.75)
+    plt.subplots_adjust(hspace=0.5)
     # plt.show()
-    plt.savefig('data_visualization.png')
+    plt.savefig(str(meters_id)+'_hour_load_visualization.png')
