@@ -34,9 +34,12 @@ def pivot_k_window(ts_data, k):
     
     return peak_dic, trough_dic
 
-data = np.load("./Data/Crude_Oil_Price/WTI.npz")
-data = data["arr_0"]
-# data type of .npz is numpy.array and need be transformed to list
-data = data.tolist()
+if __name__ == '__main__':
+    data = np.load("./Data/Crude_Oil_Price/WTI.npz")
+    data = data["arr_0"]
+    # data type of .npz is numpy.array and need be transformed to list
+    data = data.tolist()
 
-pivot_k_window(data,10)
+    peak_dic, trough_dic=pivot_k_window(data,10)
+    print(peak_dic)
+    print(trough_dic)

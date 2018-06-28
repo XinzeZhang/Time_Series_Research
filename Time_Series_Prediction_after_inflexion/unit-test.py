@@ -13,6 +13,9 @@ from numpy import concatenate
 import matplotlib.ticker as ticker
 # matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from definition import pivot_k_window
+
+from typing import List
 
 # load data from .npz
 # the data in ./Data/Residential_Load/ has 3 columns, meters_date, meters_time and load_data.
@@ -83,6 +86,20 @@ if __name__ == '__main__':
     load_data= temp["arr_0"]
     ts_values_array=np.array(load_data)
     set_length=len(ts_values_array)
+
+    k_windows = 10
+    peak_dic, trough_dic=pivot_k_window(ts_values_array, k_windows)
+    peak_range: List[int] = []
+    peak_value: List[float] = []
+    trough_range: List[int] = []
+    trough_value: List[float] = []
+
+    for idx in peak_dic:
+        peak_dic.append(idx)
+        peak_value.append(peak_dic[idx])
+    for idx in trough_dic:
+        trough_range.append(idx)
+        trough_value.append(peak_dic[idx])        
 
     # transform data to be stationary
     diff = difference(load_data, 1)
