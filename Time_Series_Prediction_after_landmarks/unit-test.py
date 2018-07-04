@@ -81,25 +81,27 @@ def invert_scale(scaler, ori_array ,pred_array):
 if __name__ == '__main__':
     # load dataset
 
-    dirs = "./Data/Crude_Oil_Price/WTI.npz"
+    # dirs = "./Data/Crude_Oil_Price/WTI.npz"
+    dirs = "./Data/Residential_Load/Residential_Load_hour.npz"
     temp = np.load(dirs)
-    load_data= temp["arr_0"]
+    load_data= temp["arr_0"].tolist()
+    # np.savez(dirs,load_data)
     ts_values_array=np.array(load_data)
     set_length=len(ts_values_array)
 
-    k_windows = 10
-    peak_dic, trough_dic=pivot_k_window(ts_values_array, k_windows)
+    k_windows = 7
+    peak_dic, trough_dic=pivot_k_window(load_data, k_windows)
     peak_range: List[int] = []
     peak_value: List[float] = []
     trough_range: List[int] = []
     trough_value: List[float] = []
 
     for idx in peak_dic:
-        peak_dic.append(idx)
+        peak_range.append(idx)
         peak_value.append(peak_dic[idx])
     for idx in trough_dic:
         trough_range.append(idx)
-        trough_value.append(peak_dic[idx])        
+        trough_value.append(trough_dic[idx])        
 
     # transform data to be stationary
     diff = difference(load_data, 1)
@@ -141,6 +143,8 @@ if __name__ == '__main__':
     # ax1.set_xticks(np.arange(0,set_length,10))
     ax1.plot(train_scope, ts_train,'k',label='ts_train',linewidth = 1.5)
     ax1.plot(test_scope, ts_target,'r',label='ts_target',linewidth = 1.5)
+    ax1.plot(peak_range,peak_value,'c^',label='ts_peak')
+    ax1.plot(trough_range,trough_value,'mv',label='ts_trough')
     # ax1.minorticks_on()
     # ax1.grid(which='both')
     ax1.legend(loc='upper right')
@@ -161,6 +165,7 @@ if __name__ == '__main__':
     ax3=plt.subplot(313,sharex=ax1)
     ax3.plot(train_scope, ts_trian_scaled,'b',label='ts_train_diff_scaled',linewidth = 1.5)
     ax3.plot(test_scope, ts_test_scaled,'r:',label='ts_target_diff_scaled',linewidth = 1.5)
+
     # ax3.minorticks_on()
     ax3.grid(which='both')
     ax3.legend(loc='upper right')
@@ -170,4 +175,4 @@ if __name__ == '__main__':
 
     plt.subplots_adjust(hspace=0.75)
     # plt.show()
-    plt.savefig('WTI_visualization.png')
+    plt.savefig('Load_visualization.png')
