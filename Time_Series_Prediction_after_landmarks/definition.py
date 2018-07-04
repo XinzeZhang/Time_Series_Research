@@ -36,42 +36,71 @@ def pivot_k_window(ts_data, k):
 
     return peak_dic, trough_dic
 
+def DP(ts_dic,ts_idx,idx,distance,percentage):
+    marks_dic=ts_dic
+    list_idxs=ts_idx
+    
+    i=idx
+    _idx=list_idxs[i]
+    _idx_R1= list_idxs[i+1]
+    _idx_R2= list_idxs[i+2]
+    _value = marks_dic[_idx]
+    _value_R1= marks_dic[_idx_R1]
+    _value_R2= marks_dic[_idx_R2]
+    d_i1= _idx_R1-_idx
+    p_i1=2.0*abs(_value_R1-_value)/(abs(_value_R1)+abs(_value))
+    d_i2=_idx_R2-_idx_R1
+    p_i2=2.0*abs(_value_R2-_value_R1)/(abs(_value_R2)+abs(_value_R1))
 
-def MDPP(ts_data, distance, percentage):
+    return d_i1,p_i1,d_i2,p_i2
+
+
+def MDPP(ts_data, distance, percentage,k=2):
     # https://ieeexplore.ieee.org/document/839385/ "Landmarks: a new model for similarity-based pattern querying in time series databases"
     # type of ts_data should be list
     ts_list = ts_data
     ts_idx = list(range(len(ts_list)))
     # pruning the begin and end
-    search_list = ts_list[1:-1]
-    ts_idx = ts_idx[1:-1]
+    search_list = ts_list[k:-k]
+    ts_idx = ts_idx[k:-k]
     marks_dic = {}
     # first step: get 1-order landmarks
     for idx, ts in zip(ts_idx, search_list):
-        if ts > window_max(ts_list, idx, 1):
+        if ts > window_max(ts_list, idx, k):
             marks_dic[idx] = ts
-        if ts < window_min(ts_list, idx, 1):
+        if ts < window_min(ts_list, idx, k):
             marks_dic[idx] = ts
     # second step: remove landmarks under MDPP
-    print(marks_dic)
+    # print(marks_dic)
     list_idxs=list(marks_dic.keys())
     
     i=0
-    while i < list(range(len(list_idxs)))[-1]:
-        _idx=list_idxs[i]
-        _idx_R1= list_idxs[i+1]
-        _value = marks_dic[_idx]
-        _value_R1= marks_dic[_idx_R1]
-        d= _idx_R1-_idx
-        p=2.0*abs(_value_R1-_value)/(abs(_value_R1)+abs(_value))
+    while i < list(range(len(list_idxs)))[-k]:
+        # _idx=list_idxs[i]
+        # _idx_R1= list_idxs[i+1]
+        # _value = marks_dic[_idx]
+        # _value_R1= marks_dic[_idx_R1]
+        # d= _idx_R1-_idx
+        # p=2.0*abs(_value_R1-_value)/(abs(_value_R1)+abs(_value))
+
+        d_i1,p_i1,d_i2,p_i2 = DP(marks_dic,list_idxs,i,distance,percentage)
         # print(d,p)
-        if (d < distance and p < percentage)==True:
-            print(_idx,_idx_R1,marks_dic[_idx],marks_dic[_idx_R1])
-            del marks_dic[_idx]
-            del marks_dic[_idx_R1]
+        if (d_i1 < distance and p_i1 < percentage)==True:
+            # print(_idx,_idx_R1,marks_dic[_idx],marks_dic[_idx_R1])
+            del marks_dic[list_idxs[i]]
+            # if ( p_i2 < percentage)==True:
+            del marks_dic[list_idxs[i+1]]
             i+=1
         i+=1            
-    print(marks_dic)
+    # print(marks_dic)
+    peak_dic = {}
+    trough_dic = {}
+    
+    for key in marks_dic:
+        if ts_list[key-1] < ts_list[key]:
+            peak_dic[key]= ts_list[key]
+        if ts_list[key-1] > ts_list[key]:
+            trough_dic[key] = ts_list[key]
     return marks_dic
 
 

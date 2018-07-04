@@ -13,7 +13,7 @@ from numpy import concatenate
 import matplotlib.ticker as ticker
 # matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from definition import pivot_k_window
+from definition import pivot_k_window,MDPP
 
 from typing import List
 
@@ -81,27 +81,34 @@ def invert_scale(scaler, ori_array ,pred_array):
 if __name__ == '__main__':
     # load dataset
 
-    # dirs = "./Data/Crude_Oil_Price/WTI.npz"
-    dirs = "./Data/Residential_Load/Residential_Load_hour.npz"
+    dirs = "./Data/Crude_Oil_Price/WTI.npz"
+    # dirs = "./Data/Residential_Load/Residential_Load_hour.npz"
     temp = np.load(dirs)
     load_data= temp["arr_0"].tolist()
     # np.savez(dirs,load_data)
     ts_values_array=np.array(load_data)
     set_length=len(ts_values_array)
 
-    k_windows = 7
+    k_windows = 5
     peak_dic, trough_dic=pivot_k_window(load_data, k_windows)
+    marks_dic = MDPP(load_data,5,0.1)
+
     peak_range: List[int] = []
     peak_value: List[float] = []
     trough_range: List[int] = []
     trough_value: List[float] = []
-
+    marks_range: List[int] = []
+    marks_value: List[float] = []
+    
     for idx in peak_dic:
         peak_range.append(idx)
         peak_value.append(peak_dic[idx])
     for idx in trough_dic:
         trough_range.append(idx)
-        trough_value.append(trough_dic[idx])        
+        trough_value.append(trough_dic[idx])
+    for idx in marks_dic:
+        marks_range.append(idx)
+        marks_value.append(marks_dic[idx])
 
     # transform data to be stationary
     diff = difference(load_data, 1)
@@ -135,7 +142,7 @@ if __name__ == '__main__':
 
     #=====================================================================
     #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    plt.figure(figsize=(90,30))
+    plt.figure(figsize=(45,15))
     # plt.figure()
     # locate the sublabel
     # draw the train set and test set
@@ -145,6 +152,11 @@ if __name__ == '__main__':
     ax1.plot(test_scope, ts_target,'r',label='ts_target',linewidth = 1.5)
     ax1.plot(peak_range,peak_value,'c^',label='ts_peak')
     ax1.plot(trough_range,trough_value,'mv',label='ts_trough')
+    ax1.plot(marks_range,marks_value,'yo',label='ts_marks')
+    for key in marks_dic:
+        # show_mark='('+str(key)+',%s)' %(marks_dic[key])
+        show_mark=str(key)
+        ax1.annotate(show_mark,xy=(key, marks_dic[key]),fontsize=9,color='y')
     # ax1.minorticks_on()
     # ax1.grid(which='both')
     ax1.legend(loc='upper right')
@@ -175,4 +187,4 @@ if __name__ == '__main__':
 
     plt.subplots_adjust(hspace=0.75)
     # plt.show()
-    plt.savefig('Load_visualization.png')
+    plt.savefig('WTI_visualization.png')
