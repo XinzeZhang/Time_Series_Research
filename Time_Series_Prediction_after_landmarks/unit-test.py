@@ -13,7 +13,7 @@ from numpy import concatenate
 import matplotlib.ticker as ticker
 # matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from definition import pivot_k_window,MDPP
+from _definition import pivot_k_window,MDPP
 
 from typing import List
 
@@ -90,22 +90,22 @@ if __name__ == '__main__':
     set_length=len(ts_values_array)
 
     k_windows = 5
-    peak_dic, trough_dic=pivot_k_window(load_data, k_windows)
-    marks_dic = MDPP(load_data,5,0.1)
+    # peak_dic, trough_dic=pivot_k_window(load_data, k_windows)
+    marks_dic = MDPP(load_data,5,0.15)
 
-    peak_range: List[int] = []
-    peak_value: List[float] = []
-    trough_range: List[int] = []
-    trough_value: List[float] = []
+    # peak_range: List[int] = []
+    # peak_value: List[float] = []
+    # trough_range: List[int] = []
+    # trough_value: List[float] = []
     marks_range: List[int] = []
     marks_value: List[float] = []
     
-    for idx in peak_dic:
-        peak_range.append(idx)
-        peak_value.append(peak_dic[idx])
-    for idx in trough_dic:
-        trough_range.append(idx)
-        trough_value.append(trough_dic[idx])
+    # for idx in peak_dic:
+    #     peak_range.append(idx)
+    #     peak_value.append(peak_dic[idx])
+    # for idx in trough_dic:
+    #     trough_range.append(idx)
+    #     trough_value.append(trough_dic[idx])
     for idx in marks_dic:
         marks_range.append(idx)
         marks_value.append(marks_dic[idx])
@@ -131,40 +131,42 @@ if __name__ == '__main__':
     train, test = dataset[0:train_size], dataset[train_size:]
     ts_train_diff=train[:,:1]
     ts_test_diff=test[:,:1]
-    ts_test_diff=np.insert(ts_test_diff,[-1],dataset[-1,-1])
+    ts_test_diff=np.append(ts_test_diff,dataset[-1,-1])
     #--------------------------------------------------------------------
     # transform the scale of the data
     scaler, train_scaled, test_scaled = scale(train, test)
     # divided the train_set and test_set
     ts_trian_scaled=train_scaled[:,:1]
     ts_test_scaled=test_scaled[:,:1]
-    ts_test_scaled=np.insert(ts_test_scaled,[-1],test_scaled[-1,-1])
-
+    ts_test_scaled=np.append(ts_test_scaled,test_scaled[-1,-1])
+    
     #=====================================================================
     #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    plt.figure(figsize=(45,15))
-    # plt.figure()
+    # plt.figure(figsize=(10,15))
+    plt.figure(figsize=(15,5))
     # locate the sublabel
     # draw the train set and test set
-    ax1=plt.subplot(311)
-    # ax1.set_xticks(np.arange(0,set_length,10))
-    ax1.plot(train_scope, ts_train,'k',label='ts_train',linewidth = 1.5)
-    ax1.plot(test_scope, ts_target,'r',label='ts_target',linewidth = 1.5)
-    ax1.plot(peak_range,peak_value,'c^',label='ts_peak')
-    ax1.plot(trough_range,trough_value,'mv',label='ts_trough')
-    ax1.plot(marks_range,marks_value,'yo',label='ts_marks')
+    # plt=plt.subplot(111)
+    # plt.set_xticks(np.arange(0,set_length,10))
+    plt.plot(train_scope, ts_train,'k',label='ts_train',linewidth = 1.5)
+    plt.plot(test_scope, ts_target,'r',label='ts_target',linewidth = 1.5)
+    # plt.plot(peak_range,peak_value,'c^',label='ts_peak')
+    # plt.plot(trough_range,trough_value,'mv',label='ts_trough')
+    plt.plot(marks_range,marks_value,'yo',label='ts_marks')
     for key in marks_dic:
         # show_mark='('+str(key)+',%s)' %(marks_dic[key])
         show_mark=str(key)
-        ax1.annotate(show_mark,xy=(key, marks_dic[key]),fontsize=9,color='y')
-    # ax1.minorticks_on()
-    # ax1.grid(which='both')
-    ax1.legend(loc='upper right')
-    ax1.set_title('Values for Time Sequences')
+        plt.annotate(show_mark,xy=(key, marks_dic[key]),fontsize=9,color='y')
+    # plt.minorticks_on()
+    # plt.grid(which='both')
+    plt.legend(loc='upper right')
+    plt.title('Values for Time Sequences')
     plt.xlabel('Time Sequence' )
     plt.ylabel('Value')
+
+    '''
     #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    ax2=plt.subplot(312,sharex=ax1)
+    ax2=plt.subplot(312,sharex=plt)
     ax2.plot(train_scope, ts_train_diff,'g',label='ts_train_diff',linewidth = 1.5)
     ax2.plot(test_scope, ts_test_diff,'r:',label='ts_target_diff',linewidth = 1.5)
     # ax2.minorticks_on()
@@ -174,7 +176,7 @@ if __name__ == '__main__':
     plt.xlabel('Time Sequence')
     plt.ylabel('Difference')
     #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    ax3=plt.subplot(313,sharex=ax1)
+    ax3=plt.subplot(313,sharex=plt)
     ax3.plot(train_scope, ts_trian_scaled,'b',label='ts_train_diff_scaled',linewidth = 1.5)
     ax3.plot(test_scope, ts_test_scaled,'r:',label='ts_target_diff_scaled',linewidth = 1.5)
 
@@ -184,7 +186,9 @@ if __name__ == '__main__':
     ax3.set_title('Values_difference_scaled for Time Sequences')
     plt.xlabel('Time Sequence')
     plt.ylabel('Scaled Difference')
+    '''
 
-    plt.subplots_adjust(hspace=0.75)
-    # plt.show()
+    # plt.subplots_adjust(hspace=0.75)
     plt.savefig('WTI_visualization.png')
+    plt.show()
+   

@@ -55,7 +55,7 @@ def DP(ts_dic,ts_idx,idx,distance,percentage):
     return d_i1,p_i1,d_i2,p_i2
 
 
-def MDPP(ts_data, distance, percentage,k=2):
+def MDPP(ts_data, distance, percentage,k=5):
     # https://ieeexplore.ieee.org/document/839385/ "Landmarks: a new model for similarity-based pattern querying in time series databases"
     # type of ts_data should be list
     ts_list = ts_data

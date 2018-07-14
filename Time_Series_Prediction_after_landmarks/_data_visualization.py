@@ -14,6 +14,9 @@ import matplotlib.ticker as ticker
 # matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
+from _definition import pivot_k_window,MDPP
+from typing import List
+
 # load data from .npz
 # the data in ./Data/Residential_Load/ has 3 columns, meters_date, meters_time and load_data.
 def load_data(filename):
@@ -114,6 +117,7 @@ if __name__ == '__main__':
     ts_test_scaled=test_scaled[:,:1]
     ts_test_scaled=np.insert(ts_test_scaled,[-1],test_scaled[-1,-1])
 
+    '''
     #=====================================================================
     #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     plt.figure(figsize=(180,60))
@@ -154,3 +158,4 @@ if __name__ == '__main__':
     plt.subplots_adjust(hspace=0.75)
     plt.show()
     # plt.savefig(str(meters_id)+'_hour_load_visualization.png')
+    '''
