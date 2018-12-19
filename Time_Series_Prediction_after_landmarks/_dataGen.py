@@ -80,7 +80,7 @@ if __name__ == '__main__':
         # training_idx = ts_idx[:point_idx+1]
         test_idx=idx_array[point_idx+1-12:point_idx+1+12]
         test_idx_set=create_dataset(test_idx, look_back=12)
-        np.savez(dirs+"/idxSet.npz",training_idx_set,test_set)
+        np.savez(dirs+"/idxSet.npz",training_idx_set,test_idx_set)
         # data_samples=ts_array[:point_idx+1+12]
         # np.savez(dirs+"/dataSet.npz",data_samples)
         # test_idx=ts_idx[point_idx+1-12:point_idx+1+12]
@@ -117,7 +117,7 @@ if __name__ == '__main__':
         # training_idx = ts_idx[:point_idx+1]
         test_idx=idx_array[point_idx+1-12:point_idx+1+12]
         test_idx_set=create_dataset(test_idx, look_back=12)
-        np.savez(dirs+"/idxSet.npz",training_idx_set,test_set)
+        np.savez(dirs+"/idxSet.npz",training_idx_set,test_idx_set)
     print("Done!")
 
     for point_idx, i in zip(marks_range, range(len(marks_range))):

@@ -51,18 +51,20 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     dirs = "./Data/Crude_Oil_Price/ED_12/WTI_1_53/"
-    raw=np.load(dirs+"/dataSet.npz")
+    raw=np.load(dirs+"/rawSet.npz")
     raw=raw["arr_0"]
     raw_T=raw.shape[0]
-    raw_section=np.arange(raw_T)
+    raw_section=range(raw_T)
+    raw_values=raw.tolist()
 
-    train=np.load(dirs+"/trainSet.npz")
-    train=train["arr_0"]
+    data=np.load(dirs+"/dataSet.npz")
+    train, test=data["arr_0"],data["arr_1"]
     train_N, train_T = train.shape[0],train.shape[1]
-
-    test=np.load(dirs+"/testSet.npz")
-    test=test["arr_0"]
     test_N, test_T = test.shape[0],test.shape[1]
+
+    idx=np.load(dirs+"/idxSet.npz")
+    train_idx, test_idx=data["arr_0"],data["arr_1"]
+
 
     # data shape should be (batch,len-ts,input-dim)
     train_input = atleast_2d(train[:,:-1])[:, :, np.newaxis]
@@ -147,9 +149,7 @@ if __name__ == '__main__':
     MSE_pred = MSE_pred.data.numpy()
     RMSE_pred = np.sqrt(MSE_pred)
 
-    # # print forecast
-    # for i in range(len(test)):
-    #     print('Predicted=%f, Expected=%f' % ( y_pred[i], raw_values[-len(test)+i]))
+
 
     plot_fig_name = Save_Road+'_Pred_'+args.cell + '_L' + \
         str(args.num_layers) + '_H' + str(args.hidden_size) + \
@@ -179,7 +179,6 @@ if __name__ == '__main__':
     plt.plot(train_scope, train_pred_plot, 'm-', label='Training Result', linewidth=1)
     plt.plot(test_idx[:,-1], test[:,-1], 'b-.', label='Test Target', linewidth=1)
     plt.plot(test_scope, test_pred_plot, 'r-.', label='Test Result', linewidth=1)
-    plt.plot(marks_range, marks_value, 'yo', label='ts_marks')
     plt.legend(loc='upper right')
     plt.savefig(plot_fig_name + '.png')
     '''                           
