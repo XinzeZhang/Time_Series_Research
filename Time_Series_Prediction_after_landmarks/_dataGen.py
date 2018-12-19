@@ -41,6 +41,7 @@ if __name__ == '__main__':
     # np.savez(dirs,load_data)
     ts_array = np.array(load_data)
     set_length = len(ts_array)
+    idx_array = np.arange(set_length)
     ts_idx = list(range(set_length))
 
     k_windows = 4
@@ -67,7 +68,25 @@ if __name__ == '__main__':
     #remove the former 4 turning points of the series
     marks_range = remove_former(marks_range, 4)
     marks_value = remove_former(marks_value, 4)
-    '''
+
+    for point_idx, i in zip(marks_range, range(len(marks_range))):
+        print(point_idx, i+1)
+        dirs = "./Data/Crude_Oil_Price/ED_12/WTI_"+str(i+1)+"_"+str(point_idx)
+        if not os.path.exists(dirs):
+            os.mkdir(dirs)
+        training_idx = idx_array[:point_idx+1]
+        # shape:(N,T) s.t. N+T-1= length
+        training_idx_set = create_dataset(training_idx, look_back=12)
+        # training_idx = ts_idx[:point_idx+1]
+        test_idx=idx_array[point_idx+1-12:point_idx+1+12]
+        test_idx_set=create_dataset(test_idx, look_back=12)
+        np.savez(dirs+"/idxSet.npz",training_idx_set,test_set)
+        # data_samples=ts_array[:point_idx+1+12]
+        # np.savez(dirs+"/dataSet.npz",data_samples)
+        # test_idx=ts_idx[point_idx+1-12:point_idx+1+12]
+    print("Done!")
+
+
     for point_idx, i in zip(marks_range, range(len(marks_range))):
         print(point_idx, i+1)
         dirs = "./Data/Crude_Oil_Price/ED_12/WTI_"+str(i+1)+"_"+str(point_idx)
@@ -76,14 +95,31 @@ if __name__ == '__main__':
         training_samples = ts_array[:point_idx+1]
         # shape:(N,T) s.t. N+T-1= length
         training_set = create_dataset(training_samples, look_back=12)
-        np.savez(dirs+"/trainSet.npz",training_set)
+        # np.savez(dirs+"/trainSet.npz",training_set)
         # training_idx = ts_idx[:point_idx+1]
         test_samples=ts_array[point_idx+1-12:point_idx+1+12]
         test_set=create_dataset(test_samples, look_back=12)
-        np.savez(dirs+"/testSet.npz",test_set)
-        # test_idx=ts_idx[point_idx+1-12:point_idx+1+12]
+        np.savez(dirs+"/dataSet.npz",training_set,test_set)
+        data_samples=ts_array[:point_idx+1+12]
+        np.savez(dirs+"/rawSet.npz",data_samples)
+  
     print("Done!")
-    '''
+
+
+    for point_idx, i in zip(marks_range, range(len(marks_range))):
+        print(point_idx, i+1)
+        dirs = "./Data/Crude_Oil_Price/ED_Var/WTI_"+str(i+1)+"_"+str(point_idx)
+        if not os.path.exists(dirs):
+            os.mkdir(dirs)
+        training_idx = idx_array[:point_idx+1]
+        # shape:(N,T) s.t. N+T-1= length
+        training_idx_set = create_varset(training_idx, look_back=12)
+        # training_idx = ts_idx[:point_idx+1]
+        test_idx=idx_array[point_idx+1-12:point_idx+1+12]
+        test_idx_set=create_dataset(test_idx, look_back=12)
+        np.savez(dirs+"/idxSet.npz",training_idx_set,test_set)
+    print("Done!")
+
     for point_idx, i in zip(marks_range, range(len(marks_range))):
         print(point_idx, i+1)
         dirs = "./Data/Crude_Oil_Price/ED_Var/WTI_"+str(i+1)+"_"+str(point_idx)
@@ -91,13 +127,12 @@ if __name__ == '__main__':
             os.mkdir(dirs)
         training_samples = ts_array[:point_idx+1]
         # shape:(N,T) s.t. N+T-1= length
-        training_set = create_varset(training_samples, look_back=12)
-        # print(training_set)
-        np.savez(dirs+"/trainSet.npz",training_set)
+        training_set = create_dataset(training_samples, look_back=12)
+        # np.savez(dirs+"/trainSet.npz",training_set)
         # training_idx = ts_idx[:point_idx+1]
         test_samples=ts_array[point_idx+1-12:point_idx+1+12]
         test_set=create_dataset(test_samples, look_back=12)
-        # print(test_set)
-        np.savez(dirs+"/testSet.npz",test_set)
-        # test_idx=ts_idx[point_idx+1-12:point_idx+1+12]
+        np.savez(dirs+"/dataSet.npz",training_set,test_set)
+        data_samples=ts_array[:point_idx+1+12]
+        np.savez(dirs+"/rawSet.npz",data_samples)
     print("Done!")

@@ -30,19 +30,19 @@ import argparse
 # Training settings
 # ==============================================================================
 parser = argparse.ArgumentParser(description='PyTorch Time Series Forecasting after Landmarks')
-parser.add_argument('--hidden_size', type=int, default=128, metavar='N',
+parser.add_argument('--hidden_size', type=int, default=256, metavar='N',
                     help='hidden size for training (default: 64)')
 parser.add_argument('--num_layers', type=int, default=1, metavar='N',
                     help='layers for training (default: 1)')
 parser.add_argument('--cell', type=str, default='RNN', metavar='S',
                     help='cell types for training (default: RNN)')
-parser.add_argument('--num_iters', type=int, default=101, metavar='N',
-                    help='layers for training (default: 100)')                    
-parser.add_argument('--optim_method', type=str, default='Adam', metavar='S',
-                    help='optim_method  for training (default: Adam)')
+parser.add_argument('--num_iters', type=int, default=150, metavar='N',
+                    help='iters for training (default: 100)')                    
+parser.add_argument('--optim_method', type=str, default='SGD', metavar='S',
+                    help='optim_method  for training (default: SGD)')
 parser.add_argument('--learning_rate', type=int, default=0.001, metavar='N',
                     help='learning_rate for training (default: 0.001)')
-parser.add_argument('--print_interval', type=int, default=50, metavar='N',
+parser.add_argument('--print_interval', type=int, default=10, metavar='N',
                     help='print_interval for training (default: 50)')
 parser.add_argument('--plot_interval', type=int, default=1, metavar='N',
                     help='plot_interval for training (default: 1)')
@@ -50,74 +50,19 @@ parser.add_argument('--plot_interval', type=int, default=1, metavar='N',
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    # load dataset
-    dirs = "./Data/Crude_Oil_Price/WTI.npz"
-    # dirs = "./Data/Residential_Load/Residential_Load_hour.npz"
-    temp = np.load(dirs)
-    load_data = temp["arr_0"].tolist()
-    # np.savez(dirs,load_data)
-    ts_values_array = np.array(load_data)
-    set_length = len(ts_values_array)
+    dirs = "./Data/Crude_Oil_Price/ED_12/WTI_1_53/"
+    raw=np.load(dirs+"/dataSet.npz")
+    raw=raw["arr_0"]
+    raw_T=raw.shape[0]
+    raw_section=np.arange(raw_T)
 
-    k_windows = 5
-    # peak_dic, trough_dic=pivot_k_window(load_data, k_windows)
-    distance = 5
-    percentage = 0.15
-    marks_dic = MDPP(load_data, distance, percentage, k_windows)
+    train=np.load(dirs+"/trainSet.npz")
+    train=train["arr_0"]
+    train_N, train_T = train.shape[0],train.shape[1]
 
-    marks_range: List[int] = []
-    marks_value: List[float] = []
-
-    for idx in marks_dic:
-        marks_range.append(idx)
-        marks_value.append(marks_dic[idx])
-
-    # -------------------------------------------------------------------
-    input_dim = 7
-    dataset = create_dataset(ts_values_array, look_back=input_dim)
-    dataset_idx = create_dataset(np.arange(set_length), look_back=input_dim)
-    # split into train and test sets
-    train_size = int(dataset.shape[0] * 0.8) + input_dim
-    train_scope = np.arange(train_size)
-    # test_size = dataset.shape[0] - train_size
-    test_scope = np.arange(train_size, set_length)
-    # -------------------------------------------------------------------
-    # divide the ts_values to train section and test section
-    ts_train = ts_values_array[:train_size].copy()
-    ts_test = ts_values_array[train_size:].copy()
-    ts_train_idx = np.arange(set_length)[:train_size].copy()
-    ts_test_idx = np.arange(set_length)[train_size:].copy()
-    # -------------------------------------------------------------------
-    # divide the ts_values to train sets and test sets
-    train, test = dataset[0:train_size], dataset[train_size:]
-    train_idx, test_idx = dataset_idx[0:train_size], dataset_idx[train_size:]
-    # sample landmarks from test sets
-    look_ahead = 4  # attention! look_ahead should be smaller than or equal to k_windows
-    test_samples_idx = np.arange(test.shape[0])
-    ts_test_marks_idx = list()
-    # get mark index in test section
-    for mark_idx in marks_range:
-        if mark_idx in ts_test_idx:
-            ts_test_marks_idx.append(mark_idx)
-
-    test_marks_set = list()
-    test_marks_set_idx = list()
-    for mark in ts_test_marks_idx:
-        for idx in test_samples_idx:
-            sample_idx = test_idx[idx, :]
-            if sample_idx[input_dim-1] == mark:
-                for step in np.arange(look_ahead):
-                    test_marks_set.append(test[idx+step, :])
-                    test_marks_set_idx.append(test_idx[idx+step, :])
-
-    test_marks_set_idx=np.array(test_marks_set_idx)
-    test_marks_set_idx = np.unique(test_marks_set_idx,axis=0)
-    test_marks_set_idx=np.array(test_marks_set_idx)
-
-    test_marks_set=np.array(test_marks_set)
-    test_marks_set = np.unique(test_marks_set,axis=0)
-    test_marks_set=np.array(test_marks_set)
-    train=np.array(train)
+    test=np.load(dirs+"/testSet.npz")
+    test=test["arr_0"]
+    test_N, test_T = test.shape[0],test.shape[1]
 
     # data shape should be (batch,len-ts,input-dim)
     train_input = atleast_2d(train[:,:-1])[:, :, np.newaxis]
