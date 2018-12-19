@@ -1,9 +1,6 @@
 import numpy as np
-from typing import List
-l = list()
 
-l.append([1,2,3])
-print(l)
-l.append([1,2,3])
-l.append([1,2,3])
-print(l)
+dirs="./Data/Crude_Oil_Price/WTI_1_53"
+temp=np.load(dirs+"/trainSet.npz")
+data=temp["arr_0"]
+print(data)

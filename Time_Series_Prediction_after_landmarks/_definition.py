@@ -110,4 +110,4 @@ if __name__ == '__main__':
     # data type of .npz is numpy.array and need be transformed to list
     data = data.tolist()
 
-    MDPP(data,4,0.05)
+    print(MDPP(data,4,0.05))

@@ -88,9 +88,9 @@ if __name__ == '__main__':
     ts_values_array=np.array(load_data)
     set_length=len(ts_values_array)
 
-    k_windows = 5
+    k_windows = 4
     # peak_dic, trough_dic=pivot_k_window(load_data, k_windows)
-    marks_dic = MDPP(load_data,5,0.15)
+    marks_dic = MDPP(load_data,12,0.15)
 
     # peak_range: List[int] = []
     # peak_value: List[float] = []
@@ -159,10 +159,10 @@ if __name__ == '__main__':
     # plt.minorticks_on()
     # plt.grid(which='both')
     plt.legend(loc='upper right')
-    plt.title('Values for Time Sequences')
+    plt.title('West Texas Intermediate Crude Oil Price')
     plt.xlabel('Time Sequence' )
     plt.ylabel('Value')
-    plt.savefig('WTI_visualization.png')
+    # plt.savefig('WTI_visualization.png')
     plt.show()
    
     '''
