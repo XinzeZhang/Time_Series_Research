@@ -149,8 +149,8 @@ if __name__ == '__main__':
         test_set=create_dataset(test_samples, look_back=12)
         np.savez(dirs+"/testSet.npz",test_set)
         # test_idx=ts_idx[point_idx+1-12:point_idx+1+12]
-        print()
-    exit()
+    print("Done!")
+    
     #=====================================================================
     #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     # plt.figure(figsize=(10,15))
@@ -175,7 +175,7 @@ if __name__ == '__main__':
     plt.xlabel('Time Sequence')
     plt.ylabel('Value')
     plt.savefig('WTI_visualization.png')
-    plt.show()
+    # plt.show()
 
     '''
     #=====================================================================

@@ -63,11 +63,11 @@ def scale(train, test):
     # transform train
     train = train.reshape(train.shape[0], train.shape[1])
     train_scaled = scaler.transform(train)
-    train_scaled = train_scaled.astype(np.float32)
+    # train_scaled = train_scaled.astype(np.float32)
     # transform test
     test = test.reshape(test.shape[0], test.shape[1])
     test_scaled = scaler.transform(test)
-    test_scaled = test_scaled.astype(np.float32)
+    # test_scaled = test_scaled.astype(np.float32)
     return scaler, train_scaled, test_scaled
 
 # inverse scaling for a forecasted value
