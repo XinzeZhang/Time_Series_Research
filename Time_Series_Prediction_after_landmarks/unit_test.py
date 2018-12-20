@@ -4,7 +4,7 @@ import torch.nn as nn
 # from torch.autograd import Variable
 import torch.optim as optim
 
-from models.model_gpu import RNNModel
+from models.rnn_gpu import RNNModel
 # from pandas import DataFrame
 # from pandas import Series
 # from pandas import concat
@@ -27,6 +27,8 @@ from _definition import pivot_k_window, MDPP
 from typing import List
 
 import argparse
+
+import os
 # Training settings
 # ==============================================================================
 parser = argparse.ArgumentParser(description='PyTorch Time Series Forecasting after Landmarks')
@@ -50,20 +52,22 @@ parser.add_argument('--plot_interval', type=int, default=1, metavar='N',
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    dirs = "./Data/Crude_Oil_Price/ED_12/WTI_1_53/"
-    raw=np.load(dirs+"/rawSet.npz")
+    input_dir = "./Data/Crude_Oil_Price/ED_12/WTI_1_53/"
+    result_dir = "./Results/COP/ED_12/WTI_1_53/"
+
+    raw=np.load(input_dir+"/rawSet.npz")
     raw=raw["arr_0"]
     raw_T=raw.shape[0]
-    raw_section=range(raw_T)
+    raw_section=[*range(raw_T)]
     raw_values=raw.tolist()
 
-    data=np.load(dirs+"/dataSet.npz")
+    data=np.load(input_dir+"/dataSet.npz")
     train, test=data["arr_0"],data["arr_1"]
     train_N, train_T = train.shape[0],train.shape[1]
     test_N, test_T = test.shape[0],test.shape[1]
 
-    idx=np.load(dirs+"/idxSet.npz")
-    train_idx, test_idx=data["arr_0"],data["arr_1"]
+    idx=np.load(input_dir+"/idxSet.npz")
+    train_idx, test_idx=idx["arr_0"],idx["arr_1"]
 
 
     # data shape should be (batch,len-ts,input-dim)
@@ -72,13 +76,7 @@ if __name__ == '__main__':
     # --
     train_target_plot = train[:,-1].flatten().tolist()
     train_section = train_idx[:,-1].flatten().tolist()
-    # # --
-    # test_input = atleast_2d(test_marks_set[:,:-1])[:, :, np.newaxis]
-    # test_target = test_marks_set[:,-1].reshape(test_marks_set.shape[0],1)[:, :, np.newaxis]
-    # # --
-    # test_target_plot = test_marks_set[:,-1].flatten().tolist()
-    # test_section = test_marks_set_idx[:,-1].flatten().tolist()
-    # --
+
     test_input = atleast_2d(test[:,:-1])[:, :, np.newaxis]
     test_target = test[:,-1].reshape(test.shape[0],1)[:, :, np.newaxis]
     # --
@@ -101,8 +99,7 @@ if __name__ == '__main__':
     # RNN_Cell:
     # 'GRU' or 'RNN'
     # # Optim_method:
-    # 'SGD' or 'Adam' or 'RMSprop' or 'Adadelta' or 'Adagrad' or 'SparseAdam' or 'Adamax' or 'ASGD'
-
+    # 'SGD' or 'Adam' 
     # benchmark 1.1 rnn h100 i1120
     
     RNN_Demo = RNNModel(input_dim=1,
@@ -116,8 +113,7 @@ if __name__ == '__main__':
                         print_interval=args.print_interval,
                         plot_interval=args.plot_interval).cuda()
     # ========================================================================================
-    Save_Road = './Results/COP'
-    RNN_Demo.fit(train_input, train_target, save_road=Save_Road)
+    RNN_Demo.fit(train_input, train_target, save_road=result_dir)
 
     # RNN_Demo.fit(train_input, train_target,View_interval)
     # save the model
@@ -138,6 +134,8 @@ if __name__ == '__main__':
     # get test_result
     Y_pred = RNN_Demo.predict(test_input)
     test_pred = Y_pred[:, -1, :]
+
+    np.savez(result_dir+"pred.npz",train_pred,test_pred)
     # Y_target = test_target
 
     # get prediction loss
@@ -149,9 +147,10 @@ if __name__ == '__main__':
     MSE_pred = MSE_pred.data.numpy()
     RMSE_pred = np.sqrt(MSE_pred)
 
-
-
-    plot_fig_name = Save_Road+'_Pred_'+args.cell + '_L' + \
+    print('\n------------------------------------------------')
+    print('Forecasting Testing Data')
+    print('------------------------------------------------')
+    plot_fig_name = result_dir+'_Pred_'+args.cell + '_L' + \
         str(args.num_layers) + '_H' + str(args.hidden_size) + \
         '_E' + str(args.num_iters)+'_'+args.optim_method
 
@@ -160,25 +159,22 @@ if __name__ == '__main__':
     test_target_plot = test_target.data.numpy()[:, 0, :].flatten()
     test_pred_plot=test_pred_torch.data.numpy().flatten()
 
-    # get section of training and test sequence   
-    test_scope = test_section
-    train_scope = train_section
-
-
+    # ============
     plt.figure(figsize=(20, 5))
-    plt.title(
-        'Forecasting Future Values for Time Series', fontsize=12)
+    # plt.title(
+    #     'Forecasting Future Values for Time Series', fontsize=12)
     plt.title('RMSE of Prediction: %(rmse).3e' %
-              {'rmse': RMSE_pred}, loc='right', fontsize=10)
+              {'rmse': RMSE_pred}, fontsize=10)
     plt.xlabel('Input Sequence', fontsize=10)
     plt.ylabel('Value', fontsize=10)
     plt.xticks(fontsize=10)
     plt.yticks(fontsize=10)
 
-    plt.plot(train_scope, train_target_plot, 'c-', label='Training Target', linewidth=1)
-    plt.plot(train_scope, train_pred_plot, 'm-', label='Training Result', linewidth=1)
+    plt.plot(raw_section,raw_values,'k-',label='Raw Series', linewidth=1)
+    plt.plot(train_section, train_target_plot, 'c-', label='Training Target', linewidth=1)
+    plt.plot(train_section, train_pred_plot, 'm-', label='Training Result', linewidth=1)
     plt.plot(test_idx[:,-1], test[:,-1], 'b-.', label='Test Target', linewidth=1)
-    plt.plot(test_scope, test_pred_plot, 'r-.', label='Test Result', linewidth=1)
+    plt.plot(test_section, test_pred_plot, 'r-.', label='Test Result', linewidth=1)
     plt.legend(loc='upper right')
     plt.savefig(plot_fig_name + '.png')
     '''                           

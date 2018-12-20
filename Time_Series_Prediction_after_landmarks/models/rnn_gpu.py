@@ -101,7 +101,8 @@ class GRUModel(BaseModel):
         GRU_h_state = self.initHidden(input)
         criterion = nn.MSELoss()
         if self.Optim_method == 'SGD':
-            optimizer = optim.SGD(self.parameters(), lr=self.Learn_rate)
+            optimizer = optim.SGD(
+                self.parameters(), lr=self.Learn_rate, momentum=0.9)
         if self.Optim_method == 'Adam':
             optimizer = optim.Adam(self.parameters(), lr=self.Learn_rate)
 
@@ -347,15 +348,12 @@ class RNNModel(BaseModel):
         return self
 
     def predict(self, input):
-        y_pred = self._predict(input)
-        return y_pred
-
-    def _predict(self, input):
         input = input.cuda()
         predict_h_state = self.initHidden(input)
         y_pred, predict_h_state = self.forward(input, predict_h_state)
         y_pred = y_pred.cpu().data.numpy()
         return y_pred
+
 
     def fit_validate(self, train_input, train_target, validate_input, validate_target, save_road='./Results/'):
         train_input = train_input.cuda()
