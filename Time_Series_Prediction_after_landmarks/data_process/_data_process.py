@@ -13,6 +13,7 @@ from numpy import concatenate
 import math
 
 import matplotlib
+matplotlib.use('agg') # avoiding Invalid DISPLAY variable; this annotation must be before 'import matplotlib.pyplot as plt'
 import matplotlib.ticker as ticker
 import matplotlib.pyplot as plt
 
@@ -54,7 +55,15 @@ def inverse_difference(hvalues, yhat, interval=1):
     return Series(ori).values
 
 # scale train and test data to [-1, 1]
-
+def scale_raw(raw):
+    # fit scaler
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    raw = raw.reshape(raw.shape[0], 1)
+    scaler = scaler.fit(raw)
+    # transform train
+    norm_raw = scaler.transform(raw)
+    norm_raw = norm_raw[:,0]
+    return scaler, norm_raw
 
 def scale(train, test):
     # fit scaler
@@ -213,7 +222,7 @@ def timeSince(since, percent):
 
 
 def plot_loss(points, Fig_name):
-    plt.figure()
+    plt.figure(figsize=(10, 5))
     # fig, ax = plt.subplots()
     # # this locator puts ticks at regular intervals
     # loc = ticker.MultipleLocator(base=0.2)

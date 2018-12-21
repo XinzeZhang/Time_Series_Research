@@ -4,7 +4,7 @@ import torch.nn as nn
 # from torch.autograd import Variable
 import torch.optim as optim
 
-from models.rnn_gpu import RNNModel
+from models.rnn_gpu import rnnModel,lstmModel
 # from pandas import DataFrame
 # from pandas import Series
 # from pandas import concat
@@ -18,6 +18,8 @@ from sklearn.metrics import mean_squared_error
 import numpy as np
 from numpy import concatenate, atleast_2d
 
+import matplotlib
+matplotlib.use('agg') # avoiding Invalid DISPLAY variable
 import matplotlib.ticker as ticker
 # matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -32,13 +34,13 @@ import os
 # Training settings
 # ==============================================================================
 parser = argparse.ArgumentParser(description='PyTorch Time Series Forecasting after Landmarks')
-parser.add_argument('--hidden_size', type=int, default=256, metavar='N',
+parser.add_argument('--hidden_size', type=int, default=4096, metavar='N',
                     help='hidden size for training (default: 64)')
 parser.add_argument('--num_layers', type=int, default=1, metavar='N',
                     help='layers for training (default: 1)')
-parser.add_argument('--cell', type=str, default='RNN', metavar='S',
+parser.add_argument('--cell', type=str, default='LSTM', metavar='S',
                     help='cell types for training (default: RNN)')
-parser.add_argument('--num_iters', type=int, default=150, metavar='N',
+parser.add_argument('--num_iters', type=int, default=1500, metavar='N',
                     help='iters for training (default: 100)')                    
 parser.add_argument('--optim_method', type=str, default='SGD', metavar='S',
                     help='optim_method  for training (default: SGD)')
@@ -48,12 +50,14 @@ parser.add_argument('--print_interval', type=int, default=10, metavar='N',
                     help='print_interval for training (default: 50)')
 parser.add_argument('--plot_interval', type=int, default=1, metavar='N',
                     help='plot_interval for training (default: 1)')
-
+parser.add_argument('--dir', type=str, default="WTI_1_53", metavar='S',
+                    help='dir of training data')
+                    
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    input_dir = "./Data/Crude_Oil_Price/ED_12/WTI_1_53/"
-    result_dir = "./Results/COP/ED_12/WTI_1_53/"
+    input_dir = "./Data/Crude_Oil_Price/ED_12/"+args.dir +"/"
+    result_dir = "./Results/COP/ED_12/"+args.dir +"/"
 
     raw=np.load(input_dir+"/rawSet.npz")
     raw=raw["arr_0"]
@@ -102,7 +106,7 @@ if __name__ == '__main__':
     # 'SGD' or 'Adam' 
     # benchmark 1.1 rnn h100 i1120
     
-    RNN_Demo = RNNModel(input_dim=1,
+    RNN_Demo = lstmModel(input_dim=1,
                         hidden_size=args.hidden_size,
                         output_dim=1,
                         num_layers=args.num_layers,
@@ -135,7 +139,7 @@ if __name__ == '__main__':
     Y_pred = RNN_Demo.predict(test_input)
     test_pred = Y_pred[:, -1, :]
 
-    np.savez(result_dir+"pred.npz",train_pred,test_pred)
+    np.savez(result_dir+args.cell+"_pred.npz",train_pred,test_pred)
     # Y_target = test_target
 
     # get prediction loss
@@ -150,7 +154,7 @@ if __name__ == '__main__':
     print('\n------------------------------------------------')
     print('Forecasting Testing Data')
     print('------------------------------------------------')
-    plot_fig_name = result_dir+'_Pred_'+args.cell + '_L' + \
+    plot_fig_name = result_dir+'Pred_'+args.cell + '_L' + \
         str(args.num_layers) + '_H' + str(args.hidden_size) + \
         '_E' + str(args.num_iters)+'_'+args.optim_method
 
@@ -171,9 +175,9 @@ if __name__ == '__main__':
     plt.yticks(fontsize=10)
 
     plt.plot(raw_section,raw_values,'k-',label='Raw Series', linewidth=1)
-    plt.plot(train_section, train_target_plot, 'c-', label='Training Target', linewidth=1)
+    # plt.plot(train_section, train_target_plot, 'c-', label='Training Target', linewidth=1)
     plt.plot(train_section, train_pred_plot, 'm-', label='Training Result', linewidth=1)
-    plt.plot(test_idx[:,-1], test[:,-1], 'b-.', label='Test Target', linewidth=1)
+    # plt.plot(test_idx[:,-1], test[:,-1], 'b-.', label='Test Target', linewidth=1)
     plt.plot(test_section, test_pred_plot, 'r-.', label='Test Result', linewidth=1)
     plt.legend(loc='upper right')
     plt.savefig(plot_fig_name + '.png')
