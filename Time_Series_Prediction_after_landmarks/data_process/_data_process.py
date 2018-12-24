@@ -57,7 +57,7 @@ def inverse_difference(hvalues, yhat, interval=1):
 # scale train and test data to [-1, 1]
 def scale_raw(raw):
     # fit scaler
-    scaler = MinMaxScaler(feature_range=(0, 1))
+    scaler = MinMaxScaler(feature_range=(-1, 1))
     raw = raw.reshape(raw.shape[0], 1)
     scaler = scaler.fit(raw)
     # transform train
@@ -67,7 +67,7 @@ def scale_raw(raw):
 
 def scale(train, test):
     # fit scaler
-    scaler = MinMaxScaler(feature_range=(0, 1))
+    scaler = MinMaxScaler(feature_range=(-1, 1))
     scaler = scaler.fit(train)
     # transform train
     train = train.reshape(train.shape[0], train.shape[1])

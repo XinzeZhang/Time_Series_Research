@@ -116,7 +116,20 @@ if __name__ == '__main__':
                         learning_rate=args.learning_rate,
                         print_interval=args.print_interval,
                         plot_interval=args.plot_interval).cuda()
-    # ========================================================================================
+    
+    if args.cell == 'LSTM':
+        RNN_Demo = lstmModel(input_dim=1,
+                        hidden_size=args.hidden_size,
+                        output_dim=1,
+                        num_layers=args.num_layers,
+                        cell=args.cell,
+                        num_iters=args.num_iters,
+                        optim_method=args.optim_method,
+                        learning_rate=args.learning_rate,
+                        print_interval=args.print_interval,
+                        plot_interval=args.plot_interval).cuda()
+    # 
+    #========================================================================================
     RNN_Demo.fit(train_input, train_target, save_road=result_dir)
 
     # RNN_Demo.fit(train_input, train_target,View_interval)
