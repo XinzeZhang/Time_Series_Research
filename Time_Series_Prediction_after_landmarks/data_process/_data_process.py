@@ -228,7 +228,7 @@ def plot_loss(points, Fig_name):
     # loc = ticker.MultipleLocator(base=0.2)
     # ax.yaxis.set_major_locator(loc)
     plt.plot(points)
-    plt.title('Loss of %(fig_name)s \n(Final Training loss:%(loss).3e)' %
+    plt.title('Loss of %(fig_name)s \n(Final Training RMSE:%(loss).3e)' %
               {'fig_name': Fig_name, 'loss': points[-1]}, fontsize=12)
     plt.savefig(Fig_name + '.png')
     plt.close()

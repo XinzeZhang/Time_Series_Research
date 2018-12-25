@@ -16,17 +16,50 @@ import math
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.autograd import Variable
 import torch.optim as optim
 
 import time
 
-from data_process._data_process import *
+from data_process._data_process import timeSince,plot_loss,plot_train
 
 import matplotlib
 matplotlib.use('agg') # avoiding Invalid DISPLAY variable
 import matplotlib.pyplot as plt
 from matplotlib import animation
+
+
+def weights_init(m):
+    if isinstance(m,nn.RNN):
+        # randome initialize the nn weight with STD
+        for name, param in m.named_parameters():
+            if 'bias' in name:
+                nn.init.normal_(param,std=0.015)
+            elif 'weight' in name:
+                nn.init.normal_(param,std=0.015)
+
+    if isinstance(m,nn.GRU):
+        # randome initialize the nn weight with STD
+        for name, param in m.named_parameters():
+            if 'bias' in name:
+                nn.init.normal_(param,std=0.015)
+            elif 'weight' in name:
+                nn.init.normal_(param,std=0.015)
+
+    if isinstance(m,nn.LSTM):
+        # randome initialize the nn weight with STD
+        for name, param in m.named_parameters():
+            if 'bias' in name:
+                nn.init.normal_(param,std=0.015)
+            elif 'weight' in name:
+                nn.init.normal_(param,std=0.015)
+
+    if isinstance(m,nn.Linear):
+        # alternative random initialize way
+        m.weight.data.normal_(0, 0.015)
+        m.bias.data.normal_(0, 0.015)
+
 
 # ---------------
 # Base model
@@ -50,6 +83,9 @@ class BaseModel(nn.Module):
             self.Cell = nn.GRU(input_size=self.Input_dim, hidden_size=self.Hidden_Size,
                                num_layers=self.Num_layers, dropout=0.0,
                                batch_first=True,)
+        if cell == "Linear":
+            self.Cell = nn.Linear(in_features=self.Input_dim, out_features=self.Hidden_Size
+                               )                        
         self.fc = nn.Linear(self.Hidden_Size, self.Output_dim)
 
 
@@ -94,8 +130,9 @@ class rnnModel(BaseModel):
 
     def initHidden(self, input):
         batchSize = input.size(0)
-        result = torch.zeros(self.Num_layers * 1,
+        result = torch.empty(self.Num_layers * 1,
                              batchSize, self.Hidden_Size).float().cuda()
+        result = nn.init.normal_(result,std=0.015)
         return result
 
     def fit(self, input, target, save_road='./Results/'):
@@ -120,6 +157,7 @@ class rnnModel(BaseModel):
         elif self.Optim_method == 'SGD':
             optimizer = optim.SGD(
                 self.parameters(), lr=self.Learn_rate, momentum=0)
+        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.95)
 
         # Initialize timer
         time_tr_start = time.time()
@@ -135,7 +173,8 @@ class rnnModel(BaseModel):
         # time_period=np.arange(input_size)# continuously plot
 
         # begin to train
-        for iter in range(1, self.Num_iters + 1):
+        for epoch in range(1, self.Num_iters + 1):
+            scheduler.step()
             # input: shape[batch,time_step,input_dim]
             # h_state: shape[layer_num*direction,batch,hidden_size]
             # rnn_output: shape[batch,time_sequence_length,hidden_size]
@@ -151,6 +190,7 @@ class rnnModel(BaseModel):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            
 
             # target_view=input[:,-1,:].data.numpy()# continuously plot
             # prediction_view=prediction[:,-1,:].data.numpy()
@@ -158,13 +198,13 @@ class rnnModel(BaseModel):
             # plt.plot(time_period,prediction_view.flatten(),'b-')
             # plt.draw();plt.pause(0.05)
 
-            if iter % self.Print_interval == 0:
+            if epoch % self.Print_interval == 0:
                 print_loss_avg = train_print_loss_total / self.Print_interval
                 train_print_loss_total = 0
-                print('%s (%d %d%%) %.8f' % (timeSince(time_tr_start, iter / self.Num_iters),
-                                             iter, iter / self.Num_iters * 100, print_loss_avg))
+                print('%s (%d %d%%) ' % (timeSince(time_tr_start, epoch / self.Num_iters),
+                                             epoch, epoch / self.Num_iters * 100))
                 print('Training RMSE:  \t %.3e' % (print_loss_avg))
-            if iter % self.Plot_interval == 0:
+            if epoch % self.Plot_interval == 0:
                 plot_loss_avg = train_plot_loss_total / self.Plot_interval
                 plot_losses.append(plot_loss_avg)
                 train_plot_loss_total = 0
@@ -388,8 +428,9 @@ class lstmModel(BaseModel):
 
     def initHidden(self, input):
         batchSize = input.size(0)
-        result = torch.zeros(self.Num_layers * 1,
-                             batchSize, self.Hidden_Size).cuda()
+        result = torch.empty(self.Num_layers * 1,
+                             batchSize, self.Hidden_Size).float().cuda()
+        result = nn.init.normal_(result,std=0.015)
         return result
 
     def fit(self, input, target, save_road='./Results/'):
@@ -430,9 +471,13 @@ class lstmModel(BaseModel):
             prediction, lstm_h_state, lstm_c_state = self.forward(input, lstm_h_state,lstm_c_state)
             lstm_h_state = lstm_h_state.data.cuda()
             lstm_c_state = lstm_c_state.data.cuda()
-            loss = criterion(prediction, target)
-            train_plot_loss_total += loss.item()
-            train_print_loss_total += loss.item()
+            prediction_2d = prediction[:, -1, :]
+            # prediction=torch.reshape(prediction,(prediction.shape[0],1,1))
+            target_2d = target[:, 0, :]
+            loss = criterion(prediction_2d, target_2d)
+            training_rmse = np.sqrt(loss.item())
+            train_plot_loss_total += training_rmse
+            train_print_loss_total += training_rmse
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -446,8 +491,9 @@ class lstmModel(BaseModel):
             if iter % self.Print_interval == 0:
                 print_loss_avg = train_print_loss_total / self.Print_interval
                 train_print_loss_total = 0
-                print('%s (%d %d%%) %.8f' % (timeSince(time_tr_start, iter / self.Num_iters),
-                                             iter, iter / self.Num_iters * 100, print_loss_avg))
+                print('%s (%d %d%%) ' % (timeSince(time_tr_start, iter / self.Num_iters),
+                                             iter, iter / self.Num_iters * 100))
+                print('Training RMSE:  \t %.3e' % (print_loss_avg))
             if iter % self.Plot_interval == 0:
                 plot_loss_avg = train_plot_loss_total / self.Plot_interval
                 plot_losses.append(plot_loss_avg)
@@ -457,7 +503,7 @@ class lstmModel(BaseModel):
         plot_loss(plot_losses, Fig_name=save_road+'Loss_'+self.cell_name+'_L'+str(self.Num_layers) +
                   '_H'+str(self.Hidden_Size)+'_I'+str(self.Num_iters)+'_'+self.Optim_method)
         print('\n------------------------------------------------')
-        print('GRU Model finished fitting')
+        print('LSTM Model finished fitting')
         print('------------------------------------------------')
 
         return self
@@ -474,3 +520,107 @@ class lstmModel(BaseModel):
         y_pred = y_pred.cpu().data.numpy()
         return y_pred
 
+
+# ---------------
+# MLP inherit base model
+# ---------------
+class mlpModel(BaseModel):
+    '''
+    MLP inherit base model, input: shape[batch,input_dim]
+    '''
+    def __init__(self, input_dim, hidden_size, output_dim, num_layers, cell, num_iters, optim_method='SGD', learning_rate=0.1, print_interval=50, plot_interval=1, view_interval=1):
+        super(mlpModel, self).__init__(
+            input_dim, hidden_size, output_dim, num_layers, cell)
+        self.cell_name = cell
+        self.Print_interval = print_interval
+        self.Plot_interval = plot_interval
+        self.Num_iters = num_iters
+        self.Optim_method = optim_method
+        self.Learn_rate = learning_rate
+    
+    def forward(self, input):
+        # input: shape[batch,input_dim]
+        mlp_output = self.Cell(input)
+        # FC_Outputs = []  # save all predictions
+        mlp_output=F.relu(mlp_output)
+        mlp_output=self.fc(mlp_output)
+        # output: shape[batch,output_dim]
+
+        return mlp_output
+    
+    def fit(self, input, target, save_road='./Results/'):
+        print('================================================')
+        # print(self.Cell)
+        print(self.cell_name+'_L'+str(self.Num_layers) + '_H' +
+              str(self.Hidden_Size)+'_I'+str(self.Num_iters)+'_'+self.Optim_method)
+        print('================================================\n')
+        input = input.cuda()
+        target = target.cuda()
+        criterion = nn.MSELoss()
+        if self.Optim_method == 'SGD':
+            optimizer = optim.SGD(
+                self.parameters(), lr=self.Learn_rate, momentum=0)
+        if self.Optim_method == 'Adam':
+            optimizer = optim.Adam(self.parameters(), lr=self.Learn_rate)
+
+        # Initialize timer
+        time_tr_start = time.time()
+
+        plot_losses = []
+        train_print_loss_total = 0  # Reset every print_every
+        train_plot_loss_total = 0  # Reset every plot_every
+
+        # plt.figure(1,figsize=(30,5))# continuously plot
+        # plt.ion() # continuously plot
+
+        # input_size=input.size(0)# continuously plot
+        # time_period=np.arange(input_size)# continuously plot
+
+        # begin to train
+        for iter in range(1, self.Num_iters + 1):
+            # input: shape[batch,input_dim]
+            # prediction: shape[batch,output_dim=1]
+            prediction = self.forward(input)
+            loss = criterion(prediction, target)
+            training_rmse = np.sqrt(loss.item())
+            train_plot_loss_total += training_rmse
+            train_print_loss_total += training_rmse
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            # target_view=input[:,-1,:].data.numpy()# continuously plot
+            # prediction_view=prediction[:,-1,:].data.numpy()
+            # plt.plot(time_period,target_view.flatten(),'r-')
+            # plt.plot(time_period,prediction_view.flatten(),'b-')
+            # plt.draw();plt.pause(0.05)
+
+            if iter % self.Print_interval == 0:
+                print_loss_avg = train_print_loss_total / self.Print_interval
+                train_print_loss_total = 0
+                print('%s (%d %d%%) ' % (timeSince(time_tr_start, iter / self.Num_iters),
+                                             iter, iter / self.Num_iters * 100))
+                print('Training RMSE:  \t %.3e' % (print_loss_avg))
+            if iter % self.Plot_interval == 0:
+                plot_loss_avg = train_plot_loss_total / self.Plot_interval
+                plot_losses.append(plot_loss_avg)
+                train_plot_loss_total = 0
+
+        # Plot loss figure
+        plot_loss(plot_losses, Fig_name=save_road+'Loss_'+self.cell_name+'_L'+str(self.Num_layers) +
+                  '_H'+str(self.Hidden_Size)+'_I'+str(self.Num_iters)+'_'+self.Optim_method)
+        print('\n------------------------------------------------')
+        print('MLP Model finished fitting')
+        print('------------------------------------------------')
+
+        return self
+
+    def predict(self, input):
+        y_pred = self._predict(input)
+        return y_pred
+
+    def _predict(self,input):
+        input = input.cuda()
+        y_pred = self.forward(input)
+        y_pred = y_pred.cpu().data.numpy()
+        return y_pred

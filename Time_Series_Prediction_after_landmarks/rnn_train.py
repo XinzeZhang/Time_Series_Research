@@ -4,7 +4,7 @@ import torch.nn as nn
 # from torch.autograd import Variable
 import torch.optim as optim
 
-from models.rnn_gpu import rnnModel,lstmModel
+from models.rnn_gpu import rnnModel,lstmModel,weights_init
 # from pandas import DataFrame
 # from pandas import Series
 # from pandas import concat
@@ -34,19 +34,19 @@ import os
 # Training settings
 # ==============================================================================
 parser = argparse.ArgumentParser(description='PyTorch Time Series Forecasting after Landmarks')
-parser.add_argument('--hidden_size', type=int, default=4096, metavar='N',
+parser.add_argument('--hidden_size', type=int, default=66, metavar='N',
                     help='hidden size for training (default: 64)')
 parser.add_argument('--num_layers', type=int, default=1, metavar='N',
                     help='layers for training (default: 1)')
 parser.add_argument('--cell', type=str, default='RNN', metavar='S',
                     help='cell types for training (default: RNN)')
-parser.add_argument('--num_iters', type=int, default=1500, metavar='N',
+parser.add_argument('--num_iters', type=int, default=10000, metavar='N',
                     help='iters for training (default: 100)')                    
-parser.add_argument('--optim_method', type=str, default='SGD', metavar='S',
-                    help='optim_method  for training (default: SGD)')
+parser.add_argument('--optim_method', type=str, default='Adam', metavar='S',
+                    help='optim_method  for training (default: Adam)')
 parser.add_argument('--learning_rate', type=int, default=0.001, metavar='N',
                     help='learning_rate for training (default: 0.001)')
-parser.add_argument('--print_interval', type=int, default=10, metavar='N',
+parser.add_argument('--print_interval', type=int, default=100, metavar='N',
                     help='print_interval for training (default: 50)')
 parser.add_argument('--plot_interval', type=int, default=1, metavar='N',
                     help='plot_interval for training (default: 1)')
@@ -78,14 +78,15 @@ if __name__ == '__main__':
     train_input = atleast_2d(train[:,:-1])[:, :, np.newaxis]
     train_target = train[:,-1].reshape(train.shape[0],1)[:, :, np.newaxis]
     # --
-    train_target_plot = train[:,-1].flatten().tolist()
+
     train_section = train_idx[:,-1].flatten().tolist()
 
     test_input = atleast_2d(test[:,:-1])[:, :, np.newaxis]
     test_target = test[:,-1].reshape(test.shape[0],1)[:, :, np.newaxis]
     # --
-    test_target_plot = test[:,-1].flatten().tolist()
+
     test_section = test_idx[:,-1].flatten().tolist()
+    test_section.insert(0,train_section[-1])
 
     # data shape should be (batch,len-ts,input-dim)
     train_input = torch.from_numpy(
@@ -128,6 +129,7 @@ if __name__ == '__main__':
                         learning_rate=args.learning_rate,
                         print_interval=args.print_interval,
                         plot_interval=args.plot_interval).cuda()
+    RNN_Demo.apply(weights_init)
     # 
     #========================================================================================
     RNN_Demo.fit(train_input, train_target, save_road=result_dir)
@@ -152,7 +154,9 @@ if __name__ == '__main__':
     Y_pred = RNN_Demo.predict(test_input)
     test_pred = Y_pred[:, -1, :]
 
-    np.savez(result_dir+args.cell+"_pred.npz",train_pred,test_pred)
+    np.savez(result_dir+args.cell + '_L' + \
+        str(args.num_layers) + '_H' + str(args.hidden_size) + \
+        '_E' + str(args.num_iters)+'_'+args.optim_method+"_pred.npz",train_pred,test_pred)
     # Y_target = test_target
 
     # get prediction loss
@@ -171,11 +175,11 @@ if __name__ == '__main__':
         str(args.num_layers) + '_H' + str(args.hidden_size) + \
         '_E' + str(args.num_iters)+'_'+args.optim_method
 
-    train_target_plot = train_target.data.numpy()[:, -1, :].flatten()
-    train_pred_plot=train_pred.flatten()
-    test_target_plot = test_target.data.numpy()[:, 0, :].flatten()
-    test_pred_plot=test_pred_torch.data.numpy().flatten()
 
+    train_pred_plot=train_pred.flatten()
+
+    test_pred_plot=test_pred_torch.data.numpy().flatten().tolist()
+    test_pred_plot.insert(0,train_target.data.numpy().flatten()[-1])
     # ============
     plt.figure(figsize=(20, 5))
     # plt.title(

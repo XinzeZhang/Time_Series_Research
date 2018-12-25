@@ -4,7 +4,7 @@ import torch.nn as nn
 # from torch.autograd import Variable
 import torch.optim as optim
 
-from models.rnn_gpu import rnnModel,lstmModel
+from models.rnn_gpu import mlpModel
 # from pandas import DataFrame
 # from pandas import Series
 # from pandas import concat
@@ -34,16 +34,16 @@ import os
 # Training settings
 # ==============================================================================
 parser = argparse.ArgumentParser(description='PyTorch Time Series Forecasting after Landmarks')
-parser.add_argument('--hidden_size', type=int, default=4096, metavar='N',
+parser.add_argument('--hidden_size', type=int, default=66, metavar='N',
                     help='hidden size for training (default: 64)')
 parser.add_argument('--num_layers', type=int, default=1, metavar='N',
                     help='layers for training (default: 1)')
-parser.add_argument('--cell', type=str, default='LSTM', metavar='S',
-                    help='cell types for training (default: RNN)')
+parser.add_argument('--cell', type=str, default='Linear', metavar='S',
+                    help='cell types for training (default: Linear)')
 parser.add_argument('--num_iters', type=int, default=1500, metavar='N',
                     help='iters for training (default: 100)')                    
-parser.add_argument('--optim_method', type=str, default='SGD', metavar='S',
-                    help='optim_method  for training (default: SGD)')
+parser.add_argument('--optim_method', type=str, default='Adam', metavar='S',
+                    help='optim_method  for training (default: Adam)')
 parser.add_argument('--learning_rate', type=int, default=0.001, metavar='N',
                     help='learning_rate for training (default: 0.001)')
 parser.add_argument('--print_interval', type=int, default=10, metavar='N',
@@ -74,18 +74,19 @@ if __name__ == '__main__':
     train_idx, test_idx=idx["arr_0"],idx["arr_1"]
 
 
-    # data shape should be (batch,len-ts,input-dim)
-    train_input = atleast_2d(train[:,:-1])[:, :, np.newaxis]
-    train_target = train[:,-1].reshape(train.shape[0],1)[:, :, np.newaxis]
+    # data shape should be (batch,input-dim)
+    train_input = atleast_2d(train[:,:-1])[:, :]
+    train_target = train[:,-1].reshape(train.shape[0],1)[:, :]
     # --
-    train_target_plot = train[:,-1].flatten().tolist()
+
     train_section = train_idx[:,-1].flatten().tolist()
 
-    test_input = atleast_2d(test[:,:-1])[:, :, np.newaxis]
-    test_target = test[:,-1].reshape(test.shape[0],1)[:, :, np.newaxis]
+    test_input = atleast_2d(test[:,:-1])[:, :]
+    test_target = test[:,-1].reshape(test.shape[0],1)[:, :]
     # --
-    test_target_plot = test[:,-1].flatten().tolist()
+
     test_section = test_idx[:,-1].flatten().tolist()
+    test_section.insert(0,train_section[-1])
 
     # data shape should be (batch,len-ts,input-dim)
     train_input = torch.from_numpy(
@@ -106,7 +107,7 @@ if __name__ == '__main__':
     # 'SGD' or 'Adam' 
     # benchmark 1.1 rnn h100 i1120
     
-    RNN_Demo = lstmModel(input_dim=1,
+    mlp_demo = mlpModel(input_dim=12,
                         hidden_size=args.hidden_size,
                         output_dim=1,
                         num_layers=args.num_layers,
@@ -117,7 +118,7 @@ if __name__ == '__main__':
                         print_interval=args.print_interval,
                         plot_interval=args.plot_interval).cuda()
     # ========================================================================================
-    RNN_Demo.fit(train_input, train_target, save_road=result_dir)
+    mlp_demo.fit(train_input, train_target, save_road=result_dir)
 
     # RNN_Demo.fit(train_input, train_target,View_interval)
     # save the model
@@ -132,21 +133,23 @@ if __name__ == '__main__':
     print('Forecasting Testing Data')
     print('------------------------------------------------')
 
-    Y_train = RNN_Demo.predict(train_input)
-    train_pred = Y_train[:, -1, :]
+    Y_train = mlp_demo.predict(train_input)
+    train_pred = Y_train[:, -1]
 
     # get test_result
-    Y_pred = RNN_Demo.predict(test_input)
-    test_pred = Y_pred[:, -1, :]
+    Y_pred = mlp_demo.predict(test_input)
+    test_pred = Y_pred[:, -1]
 
-    np.savez(result_dir+args.cell+"_pred.npz",train_pred,test_pred)
+    np.savez(result_dir+args.cell + '_L' + \
+        str(args.num_layers) + '_H' + str(args.hidden_size) + \
+        '_E' + str(args.num_iters)+'_'+args.optim_method+"_pred.npz",train_pred,test_pred)
     # Y_target = test_target
 
     # get prediction loss
     MSE_loss = nn.MSELoss()
     test_pred_torch = torch.from_numpy(
         test_pred).float()
-    Y_target_torch = test_target[:,0,:]
+    Y_target_torch = test_target[:,-1]
     MSE_pred = MSE_loss(test_pred_torch, Y_target_torch)
     MSE_pred = MSE_pred.data.numpy()
     RMSE_pred = np.sqrt(MSE_pred)
@@ -158,10 +161,11 @@ if __name__ == '__main__':
         str(args.num_layers) + '_H' + str(args.hidden_size) + \
         '_E' + str(args.num_iters)+'_'+args.optim_method
 
-    train_target_plot = train_target.data.numpy()[:, -1, :].flatten()
+    
     train_pred_plot=train_pred.flatten()
-    test_target_plot = test_target.data.numpy()[:, 0, :].flatten()
-    test_pred_plot=test_pred_torch.data.numpy().flatten()
+    
+    test_pred_plot=test_pred_torch.data.numpy().flatten().tolist()
+    test_pred_plot.insert(0,train_target.data.numpy().flatten()[-1])
 
     # ============
     plt.figure(figsize=(20, 5))
