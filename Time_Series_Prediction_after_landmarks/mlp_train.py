@@ -140,9 +140,9 @@ if __name__ == '__main__':
     Y_pred = mlp_demo.predict(test_input)
     test_pred = Y_pred[:, -1]
 
-    np.savez(result_dir+args.cell + '_L' +
-             str(args.num_layers) + '_H' + str(args.hidden_size) +
-             '_E' + str(args.num_iters)+'_'+args.optim_method+"_pred.npz", train_pred, test_pred)
+    np.savez(result_dir+'Npz_'+args.cell + '_L' + \
+        str(args.num_layers) + '_H' + str(args.hidden_size) + \
+        '_E' + str(args.num_iters)+'_'+args.optim_method+".npz",train_pred,test_pred)
     # Y_target = test_target
 
     # get prediction loss
@@ -155,9 +155,9 @@ if __name__ == '__main__':
     RMSE_pred = np.sqrt(MSE_pred)
 
     print('\n------------------------------------------------')
-    print('Forecasting Testing Data')
+    print('Ploting Testing Data')
     print('------------------------------------------------')
-    plot_fig_name = result_dir+'Pred_'+args.cell + '_L' + \
+    plot_fig_name = result_dir+'Fig_'+args.cell + '_L' + \
         str(args.num_layers) + '_H' + str(args.hidden_size) + \
         '_E' + str(args.num_iters)+'_'+args.optim_method
 

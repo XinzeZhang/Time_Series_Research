@@ -85,16 +85,16 @@ if __name__ == '__main__':
     train_pred = svr_demo.predict(train_input)
     # get test_result
     test_pred = svr_demo.predict(test_input)
-    np.savez(result_dir+args.kernel +"_pred.npz", train_pred, test_pred)
+    np.savez(result_dir+'Npz_'+'SVR_'+args.kernel.upper() +".npz", train_pred, test_pred)
 
     print('\n------------------------------------------------')
-    print('Forecasting Testing Data')
+    print('Ploting Testing Data')
     print('------------------------------------------------')
 
     MSE_pred= mean_squared_error(test_target,test_pred)
     RMSE_pred = np.sqrt(MSE_pred)
 
-    plot_fig_name = result_dir+args.kernel
+    plot_fig_name = result_dir+'Fig_'+'SVR_'+args.kernel.upper() 
 
     train_pred_plot = train_pred.flatten()
 
