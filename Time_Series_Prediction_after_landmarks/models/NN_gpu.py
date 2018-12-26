@@ -449,7 +449,7 @@ class lstmModel(BaseModel):
                 self.parameters(), lr=self.Learn_rate, momentum=0)
         if self.Optim_method == 'Adam':
             optimizer = optim.Adam(self.parameters(), lr=self.Learn_rate)
-
+        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.95)
         # Initialize timer
         time_tr_start = time.time()
 
@@ -465,6 +465,7 @@ class lstmModel(BaseModel):
 
         # begin to train
         for iter in range(1, self.Num_iters + 1):
+            scheduler.step()
             # input: shape[batch,time_step,input_dim]
             # h_state: shape[layer_num*direction,batch,hidden_size]
             # rnn_output: shape[batch,time_sequence_length,hidden_size]
@@ -562,7 +563,7 @@ class mlpModel(BaseModel):
                 self.parameters(), lr=self.Learn_rate, momentum=0)
         if self.Optim_method == 'Adam':
             optimizer = optim.Adam(self.parameters(), lr=self.Learn_rate)
-
+        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.95)
         # Initialize timer
         time_tr_start = time.time()
 
@@ -578,6 +579,7 @@ class mlpModel(BaseModel):
 
         # begin to train
         for iter in range(1, self.Num_iters + 1):
+            scheduler.step()
             # input: shape[batch,input_dim]
             # prediction: shape[batch,output_dim=1]
             prediction = self.forward(input)
