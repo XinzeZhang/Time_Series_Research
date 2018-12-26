@@ -4,7 +4,7 @@ import torch.nn as nn
 # from torch.autograd import Variable
 import torch.optim as optim
 
-from models.rnn_gpu import rnnModel,lstmModel,weights_init
+from models.NN_gpu import rnnModel,lstmModel,weights_init
 # from pandas import DataFrame
 # from pandas import Series
 # from pandas import concat

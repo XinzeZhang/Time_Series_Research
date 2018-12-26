@@ -1,17 +1,25 @@
 from __future__ import print_function
+from data_process._data_process import create_dataset, plot_forecasting_result
+import os
+import argparse
+from typing import List
+from _definition import pivot_k_window, MDPP
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+
 import torch
 import torch.nn as nn
 # from torch.autograd import Variable
 import torch.optim as optim
 
-from models.rnn_gpu import mlpModel
+from models.NN_gpu import mlpModel
 # from pandas import DataFrame
 # from pandas import Series
 # from pandas import concat
 # from pandas import read_csv
 # from pandas import datetime
 
-from sklearn.metrics import mean_squared_error
+
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
 
@@ -19,21 +27,14 @@ import numpy as np
 from numpy import concatenate, atleast_2d
 
 import matplotlib
-matplotlib.use('agg') # avoiding Invalid DISPLAY variable
-import matplotlib.ticker as ticker
+matplotlib.use('agg')  # avoiding Invalid DISPLAY variable
 # matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 
-from data_process._data_process import create_dataset,plot_forecasting_result
-from _definition import pivot_k_window, MDPP
-from typing import List
 
-import argparse
-
-import os
 # Training settings
 # ==============================================================================
-parser = argparse.ArgumentParser(description='PyTorch Time Series Forecasting after Landmarks')
+parser = argparse.ArgumentParser(
+    description='PyTorch Time Series Forecasting after Landmarks')
 parser.add_argument('--hidden_size', type=int, default=66, metavar='N',
                     help='hidden size for training (default: 64)')
 parser.add_argument('--num_layers', type=int, default=1, metavar='N',
@@ -41,7 +42,7 @@ parser.add_argument('--num_layers', type=int, default=1, metavar='N',
 parser.add_argument('--cell', type=str, default='Linear', metavar='S',
                     help='cell types for training (default: Linear)')
 parser.add_argument('--num_iters', type=int, default=1500, metavar='N',
-                    help='iters for training (default: 100)')                    
+                    help='iters for training (default: 100)')
 parser.add_argument('--optim_method', type=str, default='Adam', metavar='S',
                     help='optim_method  for training (default: Adam)')
 parser.add_argument('--learning_rate', type=int, default=0.001, metavar='N',
@@ -52,41 +53,40 @@ parser.add_argument('--plot_interval', type=int, default=1, metavar='N',
                     help='plot_interval for training (default: 1)')
 parser.add_argument('--dir', type=str, default="WTI_1_53", metavar='S',
                     help='dir of training data')
-                    
+
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    input_dir = "./Data/Crude_Oil_Price/ED_12/"+args.dir +"/"
-    result_dir = "./Results/COP/ED_12/"+args.dir +"/"
+    input_dir = "./Data/Crude_Oil_Price/ED_12/"+args.dir + "/"
+    result_dir = "./Results/COP/ED_12/"+args.dir + "/"
 
-    raw=np.load(input_dir+"/rawSet.npz")
-    raw=raw["arr_0"]
-    raw_T=raw.shape[0]
-    raw_section=[*range(raw_T)]
-    raw_values=raw.tolist()
+    raw = np.load(input_dir+"/rawSet.npz")
+    raw = raw["arr_0"]
+    raw_T = raw.shape[0]
+    raw_section = [*range(raw_T)]
+    raw_values = raw.tolist()
 
-    data=np.load(input_dir+"/dataSet.npz")
-    train, test=data["arr_0"],data["arr_1"]
-    train_N, train_T = train.shape[0],train.shape[1]
-    test_N, test_T = test.shape[0],test.shape[1]
+    data = np.load(input_dir+"/dataSet.npz")
+    train, test = data["arr_0"], data["arr_1"]
+    train_N, train_T = train.shape[0], train.shape[1]
+    test_N, test_T = test.shape[0], test.shape[1]
 
-    idx=np.load(input_dir+"/idxSet.npz")
-    train_idx, test_idx=idx["arr_0"],idx["arr_1"]
-
+    idx = np.load(input_dir+"/idxSet.npz")
+    train_idx, test_idx = idx["arr_0"], idx["arr_1"]
 
     # data shape should be (batch,input-dim)
-    train_input = atleast_2d(train[:,:-1])[:, :]
-    train_target = train[:,-1].reshape(train.shape[0],1)[:, :]
+    train_input = atleast_2d(train[:, :-1])[:, :]
+    train_target = train[:, -1].reshape(train.shape[0], 1)[:, :]
     # --
 
-    train_section = train_idx[:,-1].flatten().tolist()
+    train_section = train_idx[:, -1].flatten().tolist()
 
-    test_input = atleast_2d(test[:,:-1])[:, :]
-    test_target = test[:,-1].reshape(test.shape[0],1)[:, :]
+    test_input = atleast_2d(test[:, :-1])[:, :]
+    test_target = test[:, -1].reshape(test.shape[0], 1)[:, :]
     # --
 
-    test_section = test_idx[:,-1].flatten().tolist()
-    test_section.insert(0,train_section[-1])
+    test_section = test_idx[:, -1].flatten().tolist()
+    test_section.insert(0, train_section[-1])
 
     # data shape should be (batch,len-ts,input-dim)
     train_input = torch.from_numpy(
@@ -104,9 +104,9 @@ if __name__ == '__main__':
     # RNN_Cell:
     # 'GRU' or 'RNN'
     # # Optim_method:
-    # 'SGD' or 'Adam' 
+    # 'SGD' or 'Adam'
     # benchmark 1.1 rnn h100 i1120
-    
+
     mlp_demo = mlpModel(input_dim=12,
                         hidden_size=args.hidden_size,
                         output_dim=1,
@@ -140,16 +140,16 @@ if __name__ == '__main__':
     Y_pred = mlp_demo.predict(test_input)
     test_pred = Y_pred[:, -1]
 
-    np.savez(result_dir+args.cell + '_L' + \
-        str(args.num_layers) + '_H' + str(args.hidden_size) + \
-        '_E' + str(args.num_iters)+'_'+args.optim_method+"_pred.npz",train_pred,test_pred)
+    np.savez(result_dir+args.cell + '_L' +
+             str(args.num_layers) + '_H' + str(args.hidden_size) +
+             '_E' + str(args.num_iters)+'_'+args.optim_method+"_pred.npz", train_pred, test_pred)
     # Y_target = test_target
 
     # get prediction loss
     MSE_loss = nn.MSELoss()
     test_pred_torch = torch.from_numpy(
         test_pred).float()
-    Y_target_torch = test_target[:,-1]
+    Y_target_torch = test_target[:, -1]
     MSE_pred = MSE_loss(test_pred_torch, Y_target_torch)
     MSE_pred = MSE_pred.data.numpy()
     RMSE_pred = np.sqrt(MSE_pred)
@@ -161,11 +161,10 @@ if __name__ == '__main__':
         str(args.num_layers) + '_H' + str(args.hidden_size) + \
         '_E' + str(args.num_iters)+'_'+args.optim_method
 
-    
-    train_pred_plot=train_pred.flatten()
-    
-    test_pred_plot=test_pred_torch.data.numpy().flatten().tolist()
-    test_pred_plot.insert(0,train_target.data.numpy().flatten()[-1])
+    train_pred_plot = train_pred.flatten()
+
+    test_pred_plot = test_pred_torch.data.numpy().flatten().tolist()
+    test_pred_plot.insert(0, train_target.data.numpy().flatten()[-1])
 
     # ============
     plt.figure(figsize=(20, 5))
@@ -178,11 +177,13 @@ if __name__ == '__main__':
     plt.xticks(fontsize=10)
     plt.yticks(fontsize=10)
 
-    plt.plot(raw_section,raw_values,'k-',label='Raw Series', linewidth=1)
+    plt.plot(raw_section, raw_values, 'k-', label='Raw Series', linewidth=1)
     # plt.plot(train_section, train_target_plot, 'c-', label='Training Target', linewidth=1)
-    plt.plot(train_section, train_pred_plot, 'm-', label='Training Result', linewidth=1)
+    plt.plot(train_section, train_pred_plot, 'm-',
+             label='Training Result', linewidth=1)
     # plt.plot(test_idx[:,-1], test[:,-1], 'b-.', label='Test Target', linewidth=1)
-    plt.plot(test_section, test_pred_plot, 'r-.', label='Test Result', linewidth=1)
+    plt.plot(test_section, test_pred_plot, 'r-.',
+             label='Test Result', linewidth=1)
     plt.legend(loc='upper right')
     plt.savefig(plot_fig_name + '.png')
     '''                           
