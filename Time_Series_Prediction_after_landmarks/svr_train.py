@@ -39,7 +39,9 @@ if __name__ == '__main__':
 
     input_dir = "./Data/Crude_Oil_Price/ED_12/"+args.dir + "/"
     result_dir = "./Results/COP/ED_12/"+args.dir + "/"
-
+    print('\n------------------------------------------------')
+    print('Loading Data: '+input_dir)
+    print('------------------------------------------------')
     raw = np.load(input_dir+"/rawSet.npz")
     raw = raw["arr_0"]
     raw_T = raw.shape[0]
